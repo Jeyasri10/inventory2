@@ -35,8 +35,9 @@ if st.button("Predict"):
         if response.status_code == 200:
             predictions = response.json()
             st.write("Predicted Demand Class:")
-            for model, pred in predictions.items():
-                st.write(f"{model}: {pred}")
+            st.write(predictions['prediction'][0])  # Assuming only one prediction
+            st.write(f"Training Error (MAE): {predictions['training_error']:.4f}")
+            st.write(f"Validation Error (MAE): {predictions['validation_error']:.4f}")
         else:
             st.error("Error in prediction!")
     except Exception as e:
