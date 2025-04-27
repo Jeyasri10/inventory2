@@ -1,4 +1,5 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -12,14 +13,36 @@ except FileNotFoundError:
     print("Error: The file was not found. Please check the file path.")
     exit()
 
-# Check the first few rows to ensure that data is loaded correctly
-print(df.head())
+# Step 2: Check the columns in the dataset
+print(f"Columns in the DataFrame: {df.columns}")
 
-# Step 2: Check if 'Units Sold' column is present
-if 'Units Sold' not in df.columns:
-    raise ValueError("'Units Sold' column is missing from the dataset.")
+# Step 3: Define the list of columns you want to check
+feature_cols = ['Price', 'Discount', 'Demand Forecast', 'Competitor Pricing',
+                'Discounted Price', 'Price Difference', 'Stock to Order Ratio', 
+                'Forecast Accuracy', 'Holiday/Promotion', 'Year', 'Month', 'Day']
 
-# Step 3: Feature Engineering - Creating 'Demand Class'
+# Step 4: Check if the columns are missing in the DataFrame
+missing_cols = [col for col in feature_cols if col not in df.columns]
+if missing_cols:
+    print(f"Missing columns: {missing_cols}")
+    raise ValueError(f"Missing columns in the DataFrame: {missing_cols}")
+else:
+    print("All specified columns are present in the DataFrame.")
+
+# Step 5: Data Preprocessing and Feature Engineering
+# Convert Date column and extract time-based features
+df['Date'] = pd.to_datetime(df['Date'])
+df['Year'] = df['Date'].dt.year
+df['Month'] = df['Date'].dt.month
+df['Day'] = df['Date'].dt.day
+
+# Feature engineering
+df['Discounted Price'] = df['Price'] * (1 - df['Discount'] / 100)
+df['Price Difference'] = df['Price'] - df['Competitor Pricing']
+df['Stock to Order Ratio'] = df['Inventory Level'] / (df['Units Ordered'] + 1)
+df['Forecast Accuracy'] = abs(df['Demand Forecast'] - df['Units Sold']) / (df['Units Sold'] + 1)
+
+# Classify the units sold for Demand Class
 def classify_units(units):
     if units <= 50:
         return 0  # Low
@@ -30,65 +53,42 @@ def classify_units(units):
 
 df['Demand Class'] = df['Units Sold'].apply(classify_units)
 
-# Ensure 'Demand Class' is created correctly
-print(f"Demand Class column created: {df['Demand Class'].head()}")
-
-# Step 4: Prepare Features and Target
-feature_cols = ['Price', 'Discount', 'Demand Forecast', 'Competitor Pricing',
-                'Discounted Price', 'Price Difference', 'Stock to Order Ratio',
-                'Forecast Accuracy', 'Holiday/Promotion', 'Year', 'Month', 'Day']
-
-# Check if the feature columns are in the DataFrame
-missing_cols = [col for col in feature_cols if col not in df.columns]
-if missing_cols:
-    raise ValueError(f"Missing columns in the DataFrame: {missing_cols}")
-
-# Prepare features (X) and target (y)
+# Prepare features and target
 X = df[feature_cols]
 y = df['Demand Class']
 
-# Step 5: Train-Test Split
+# Step 6: Split the data into training and validation sets
 X_train, X_val, Y_train, Y_val = train_test_split(X, y, test_size=0.2, random_state=22)
 
-# Step 6: Scale numerical features
-numerical_cols = ['Price', 'Discount', 'Demand Forecast', 'Competitor Pricing', 'Discounted Price', 
-                  'Stock to Order Ratio', 'Inventory Level', 'Units Ordered']
-
+# Step 7: Scale numerical features
+numerical_cols = ['Price', 'Discount', 'Demand Forecast', 'Competitor Pricing', 
+                  'Discounted Price', 'Stock to Order Ratio', 'Inventory Level', 
+                  'Units Ordered']
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train[numerical_cols])
 X_val_scaled = scaler.transform(X_val[numerical_cols])
 
-# Step 7: Train Models (Linear Regression, Lasso Regression, Ridge Regression)
-models = {
-    "Linear Regression": LinearRegression(),
-    "Lasso Regression": Lasso(alpha=0.1),
-    "Ridge Regression": Ridge(alpha=1.0)
-}
+# Step 8: Define models for training
+models = [
+    ("Linear Regression", LinearRegression()),
+    ("Lasso Regression", Lasso(alpha=0.1)),
+    ("Ridge Regression", Ridge(alpha=1.0))
+]
 
+# Train and evaluate each model
 trained_models = {}
-
-for model_name, model in models.items():
+for name, model in models:
+    print(f'Training {name}...')
     model.fit(X_train_scaled, Y_train)
-    trained_models[model_name] = model
+    trained_models[name] = model
 
-# Step 8: Evaluate Models on Training and Validation Data
-for model_name, model in trained_models.items():
-    # Training predictions and error
+    # Training Error (MAE)
     train_preds = model.predict(X_train_scaled)
     train_error = mae(Y_train, train_preds)
+    print(f'Training Error (MAE) for {name}: {train_error:.4f}')
 
-    # Validation predictions and error
+    # Validation Error (MAE)
     val_preds = model.predict(X_val_scaled)
     val_error = mae(Y_val, val_preds)
-
-    # Print training and validation errors
-    print(f"{model_name}:")
-    print(f"  Training Error (MAE): {train_error:.4f}")
-    print(f"  Validation Error (MAE): {val_error:.4f}")
-
-# Optional: Display predictions on validation data for inspection
-print("\nPredictions on Validation Data (for first 5 samples):")
-for model_name, model in trained_models.items():
-    val_preds = model.predict(X_val_scaled)
-    print(f"\n{model_name} predictions on validation data:")
-    print(val_preds[:5])  # Print the first few predictions
+    print(f'Validation Error (MAE) for {name}: {val_error:.4f}')
+    print()
