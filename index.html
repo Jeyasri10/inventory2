@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retail Inventory Prediction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+        }
+        h3 {
+            color: #333;
+        }
+        form {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            margin-top: 10px;
+            display: block;
+            font-size: 14px;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            font-size: 16px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Retail Inventory Prediction</h1>
+
+<form action="/predict" method="POST">
+    <label for="price">Price:</label>
+    <input type="number" id="price" name="price" step="0.01" required>
+
+    <label for="discount">Discount (%):</label>
+    <input type="number" id="discount" name="discount" step="0.01" required>
+
+    <label for="demand_forecast">Demand Forecast:</label>
+    <input type="number" id="demand_forecast" name="demand_forecast" required>
+
+    <label for="competitor_pricing">Competitor Pricing:</label>
+    <input type="number" id="competitor_pricing" name="competitor_pricing" required>
+
+    <!-- Add more fields if necessary -->
+
+    <button type="submit">Submit</button>
+</form>
+
+<div class="result">
+    {% if prediction %}
+        <p>Predicted Units Sold: {{ prediction }}</p>
+    {% endif %}
+</div>
+
+</body>
+</html>
